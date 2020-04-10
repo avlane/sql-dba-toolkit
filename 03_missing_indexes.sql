@@ -12,7 +12,8 @@ SELECT TOP (25)
        migs.user_seeks,
        migs.user_scans,
        migs.avg_total_user_cost,
-       migs.avg_user_impact
+       migs.avg_user_impact,
+       CAST(migs.avg_total_user_cost * migs.avg_user_impact * (migs.user_seeks + migs.user_scans) AS DECIMAL(20,0)) AS improvement_score
 FROM sys.dm_db_missing_index_details     AS mid
 JOIN sys.dm_db_missing_index_groups      AS mig  ON mig.index_handle = mid.index_handle
 JOIN sys.dm_db_missing_index_group_stats AS migs ON migs.group_handle = mig.index_group_handle
