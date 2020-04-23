@@ -13,6 +13,13 @@ SELECT TOP (25)
        migs.user_scans,
        migs.avg_total_user_cost,
        migs.avg_user_impact,
+       'CREATE NONCLUSTERED INDEX [IX_' + OBJECT_NAME(mid.object_id, mid.database_id) + '_'
+           + CAST(mig.index_handle AS VARCHAR(10)) + '] ON '
+           + mid.statement + ' ('
+           + ISNULL(mid.equality_columns, '')
+           + CASE WHEN mid.equality_columns IS NOT NULL AND mid.inequality_columns IS NOT NULL THEN ', ' ELSE '' END
+           + ISNULL(mid.inequality_columns, '') + ')'
+           + ISNULL(' INCLUDE (' + mid.included_columns + ')', '') AS create_statement,
        CAST(migs.avg_total_user_cost * migs.avg_user_impact * (migs.user_seeks + migs.user_scans) AS DECIMAL(20,0)) AS improvement_score
 FROM sys.dm_db_missing_index_details     AS mid
 JOIN sys.dm_db_missing_index_groups      AS mig  ON mig.index_handle = mid.index_handle
