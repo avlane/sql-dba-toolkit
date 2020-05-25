@@ -16,4 +16,8 @@ LEFT JOIN sys.dm_db_index_usage_stats AS us
        ON us.object_id = i.object_id AND us.index_id = i.index_id AND us.database_id = DB_ID()
 WHERE t.is_ms_shipped = 0
   AND i.index_id > 1
+  AND i.is_unique = 0                  -- unique indexes enforce rules even if never read
+  AND i.is_unique_constraint = 0
+  AND i.is_primary_key = 0
+  AND ISNULL(us.user_seeks + us.user_scans + us.user_lookups, 0) = 0
 ORDER BY user_updates DESC;
