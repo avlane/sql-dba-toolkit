@@ -9,6 +9,8 @@ FROM sys.dm_os_wait_stats;
 
 WAITFOR DELAY @delay;
 
+WITH delta AS
+(
 SELECT a.wait_type,
        a.waiting_tasks_count - b.waiting_tasks_count AS waiting_tasks,
        a.wait_time_ms - b.wait_time_ms               AS wait_time_ms,
@@ -27,6 +29,14 @@ WHERE a.wait_time_ms - b.wait_time_ms > 0
       N'QDS_ASYNC_QUEUE', N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', N'SP_SERVER_DIAGNOSTICS_SLEEP',
       N'PREEMPTIVE_XE_GETTARGETSTATE', N'PWAIT_ALL_COMPONENTS_INITIALIZED', N'CLR_AUTO_EVENT', N'CLR_MANUAL_EVENT',
       N'SOS_WORK_DISPATCHER', N'PARALLEL_REDO_WORKER_WAIT_WORK', N'PARALLEL_REDO_DRAIN_WORKER')
+)
+SELECT wait_type,
+       waiting_tasks,
+       wait_time_ms,
+       wait_time_ms - signal_wait_ms AS resource_wait_ms,
+       signal_wait_ms,
+       CAST(100.0 * wait_time_ms / NULLIF(SUM(wait_time_ms) OVER (), 0) AS DECIMAL(5,2)) AS pct_of_total
+FROM delta
 ORDER BY wait_time_ms DESC;
 
 DROP TABLE #before;
