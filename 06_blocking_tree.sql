@@ -23,8 +23,23 @@ SELECT REPLICATE('    ', t.lvl) + CAST(t.session_id AS VARCHAR(10)) AS session_t
        s.program_name,
        r.wait_type,
        r.wait_time AS wait_ms,
-       DB_NAME(r.database_id) AS database_name
+       r.wait_resource,
+       DB_NAME(r.database_id) AS database_name,
+       DATEDIFF(SECOND, tx.transaction_begin_time, GETDATE()) AS open_tran_seconds,
+       -- A head blocker usually has no active request, so fall back to its last statement
+       COALESCE(SUBSTRING(st.text, r.statement_start_offset / 2 + 1,
+                          (CASE WHEN r.statement_end_offset = -1 THEN DATALENGTH(st.text) ELSE r.statement_end_offset END
+                           - r.statement_start_offset) / 2 + 1),
+                ib.text) AS sql_text
 FROM tree AS t
 JOIN sys.dm_exec_sessions AS s ON s.session_id = t.session_id
 LEFT JOIN sys.dm_exec_requests AS r ON r.session_id = t.session_id
+LEFT JOIN sys.dm_exec_connections AS c ON c.session_id = t.session_id
+OUTER APPLY sys.dm_exec_sql_text(COALESCE(r.sql_handle, c.most_recent_sql_handle)) AS st
+OUTER APPLY (SELECT TOP (1) at.transaction_begin_time
+             FROM sys.dm_tran_session_transactions AS stt
+             JOIN sys.dm_tran_active_transactions AS at ON at.transaction_id = stt.transaction_id
+             WHERE stt.session_id = t.session_id
+             ORDER BY at.transaction_begin_time) AS tx
+OUTER APPLY (SELECT st.text AS text) AS ib
 ORDER BY t.sort_path;
