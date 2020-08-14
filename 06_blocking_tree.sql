@@ -15,6 +15,8 @@ tree AS
     SELECT r.session_id, CAST(r.blocking_session_id AS INT), t.lvl + 1, CAST(t.sort_path + '.' + RIGHT('0000' + CAST(r.session_id AS VARCHAR(5)), 5) AS VARCHAR(400))
     FROM sys.dm_exec_requests AS r
     JOIN tree AS t ON t.session_id = r.blocking_session_id
+    WHERE t.lvl < 20                                                              -- chains this deep are a bug, not a chain
+      AND t.sort_path NOT LIKE '%' + RIGHT('0000' + CAST(r.session_id AS VARCHAR(5)), 5) + '%'  -- break deadlock cycles
 )
 SELECT REPLICATE('    ', t.lvl) + CAST(t.session_id AS VARCHAR(10)) AS session_tree,
        t.blocked_by,
@@ -42,4 +44,5 @@ OUTER APPLY (SELECT TOP (1) at.transaction_begin_time
              WHERE stt.session_id = t.session_id
              ORDER BY at.transaction_begin_time) AS tx
 OUTER APPLY (SELECT st.text AS text) AS ib
-ORDER BY t.sort_path;
+ORDER BY t.sort_path
+OPTION (MAXRECURSION 25);
