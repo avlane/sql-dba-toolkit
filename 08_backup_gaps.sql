@@ -1,0 +1,20 @@
+-- Databases with no recent full backup, or FULL/BULK_LOGGED databases with no recent log backup.
+DECLARE @FullHours INT = 26;    -- a nightly full plus an hour of slack
+DECLARE @LogMinutes INT = 60;
+
+SELECT d.name AS database_name,
+       d.recovery_model_desc,
+       lf.last_full,
+       ll.last_log,
+       CASE WHEN lf.last_full IS NULL THEN 'NO FULL BACKUP EVER'
+            WHEN lf.last_full < DATEADD(HOUR, -@FullHours, GETDATE()) THEN 'FULL BACKUP OVERDUE' END AS full_problem,
+       CASE WHEN d.recovery_model_desc <> 'SIMPLE' AND ll.last_log IS NULL THEN 'NO LOG BACKUP EVER'
+            WHEN d.recovery_model_desc <> 'SIMPLE' AND ll.last_log < DATEADD(MINUTE, -@LogMinutes, GETDATE()) THEN 'LOG BACKUP OVERDUE' END AS log_problem
+FROM sys.databases AS d
+OUTER APPLY (SELECT MAX(backup_finish_date) AS last_full FROM msdb.dbo.backupset WHERE database_name = d.name AND type = 'D') AS lf
+OUTER APPLY (SELECT MAX(backup_finish_date) AS last_log  FROM msdb.dbo.backupset WHERE database_name = d.name AND type = 'L') AS ll
+WHERE d.database_id <> 2
+  AND d.state_desc = 'ONLINE'
+  AND (lf.last_full IS NULL OR lf.last_full < DATEADD(HOUR, -@FullHours, GETDATE())
+       OR (d.recovery_model_desc <> 'SIMPLE' AND (ll.last_log IS NULL OR ll.last_log < DATEADD(MINUTE, -@LogMinutes, GETDATE()))))
+ORDER BY d.name;
