@@ -30,14 +30,14 @@ SELECT TOP (25)
        a.query_id,
        a.recent_exec,
        a.hist_exec,
-       CAST(a.recent_dur / a.recent_exec / 1000.0 AS DECIMAL(18,1)) AS recent_avg_ms,
-       CAST(a.hist_dur / a.hist_exec / 1000.0 AS DECIMAL(18,1))         AS history_avg_ms,
-       CAST((a.recent_dur / a.recent_exec) / (a.hist_dur / a.hist_exec) AS DECIMAL(10,1)) AS slowdown_ratio,
+       CAST(a.recent_dur / NULLIF(a.recent_exec, 0) / 1000.0 AS DECIMAL(18,1)) AS recent_avg_ms,
+       CAST(a.hist_dur / NULLIF(a.hist_exec, 0) / 1000.0 AS DECIMAL(18,1))         AS history_avg_ms,
+       CAST((a.recent_dur / a.recent_exec) / (a.hist_dur / NULLIF(a.hist_exec, 0)) AS DECIMAL(10,1)) AS slowdown_ratio,
        LEFT(qt.query_sql_text, 300) AS query_text
 FROM agg AS a
 JOIN sys.query_store_query      AS q  ON q.query_id = a.query_id
 JOIN sys.query_store_query_text AS qt ON qt.query_text_id = q.query_text_id
 WHERE a.recent_exec >= @MinExecutions
   AND a.hist_exec   >= @MinExecutions
-  AND (a.recent_dur / a.recent_exec) >= @MinRatio * (a.hist_dur / a.hist_exec)
+  AND (a.recent_dur / a.recent_exec) >= @MinRatio * (a.hist_dur / NULLIF(a.hist_exec, 0))
 ORDER BY slowdown_ratio DESC;
