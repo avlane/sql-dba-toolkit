@@ -18,7 +18,9 @@ SELECT s.name AS schema_name,
        CAST(z.reserved_pages * 8 / 1024.0 AS DECIMAL(18,2))                  AS reserved_mb,
        CAST(z.data_pages * 8 / 1024.0 AS DECIMAL(18,2))                      AS data_mb,
        CAST((z.used_pages - z.data_pages) * 8 / 1024.0 AS DECIMAL(18,2))     AS index_mb,
-       CAST((z.reserved_pages - z.used_pages) * 8 / 1024.0 AS DECIMAL(18,2)) AS unused_mb
+       CAST((z.reserved_pages - z.used_pages) * 8 / 1024.0 AS DECIMAL(18,2)) AS unused_mb,
+       (SELECT MAX(pt.data_compression_desc) FROM sys.partitions AS pt
+        WHERE pt.object_id = t.object_id AND pt.index_id IN (0, 1)) AS data_compression
 FROM sizes AS z
 JOIN sys.tables  AS t ON t.object_id = z.object_id
 JOIN sys.schemas AS s ON s.schema_id = t.schema_id
