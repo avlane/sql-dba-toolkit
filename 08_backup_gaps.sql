@@ -15,6 +15,7 @@ OUTER APPLY (SELECT MAX(backup_finish_date) AS last_full FROM msdb.dbo.backupset
 OUTER APPLY (SELECT MAX(backup_finish_date) AS last_log  FROM msdb.dbo.backupset WHERE database_name = d.name AND type = 'L' AND is_copy_only = 0) AS ll
 WHERE d.database_id <> 2
   AND d.state_desc = 'ONLINE'
+  AND sys.fn_hadr_backup_is_preferred_replica(d.name) = 1   -- 1 for databases outside an AG too
   AND d.source_database_id IS NULL        -- database snapshots cannot be backed up
   AND ISNULL(d.is_in_standby, 0) = 0
   AND (lf.last_full IS NULL OR lf.last_full < DATEADD(HOUR, -@FullHours, GETDATE())
