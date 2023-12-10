@@ -14,3 +14,14 @@ JOIN msdb.dbo.sysjobs       AS j ON j.job_id = h.job_id
 WHERE h.run_status = 0                                     -- 0 = failed
   AND msdb.dbo.agent_datetime(h.run_date, h.run_time) >= DATEADD(DAY, -@Days, GETDATE())
 ORDER BY run_at DESC, h.step_id DESC;
+
+
+-- SQL Server 2022 and later: failures per hour, to spot a bad window quickly.
+SELECT DATETRUNC(HOUR, msdb.dbo.agent_datetime(h.run_date, h.run_time)) AS hour_start,
+       COUNT(*) AS failed_steps,
+       COUNT(DISTINCT h.job_id) AS jobs_affected
+FROM msdb.dbo.sysjobhistory AS h
+WHERE h.run_status = 0
+  AND msdb.dbo.agent_datetime(h.run_date, h.run_time) >= DATEADD(DAY, -@Days, GETDATE())
+GROUP BY DATETRUNC(HOUR, msdb.dbo.agent_datetime(h.run_date, h.run_time))
+ORDER BY hour_start DESC;
