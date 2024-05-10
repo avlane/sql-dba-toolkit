@@ -5,6 +5,7 @@
 -- Fragmentation of indexes under about 1000 pages (8 MB) is noise: they often live in mixed extents
 -- and a rebuild does not change the number.
 DECLARE @MinPages INT = 1000;
+DECLARE @Mode VARCHAR(8) = 'LIMITED';   -- 'SAMPLED' reads more pages and is more accurate for leaf-level density
 
 SELECT OBJECT_SCHEMA_NAME(ips.object_id) AS schema_name,
        OBJECT_NAME(ips.object_id)        AS table_name,
@@ -15,8 +16,10 @@ SELECT OBJECT_SCHEMA_NAME(ips.object_id) AS schema_name,
        CASE WHEN ips.avg_fragmentation_in_percent >= 30 THEN 'REBUILD'
             WHEN ips.avg_fragmentation_in_percent >= 5  THEN 'REORGANIZE'
             ELSE 'ok' END AS recommendation
-FROM sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'LIMITED') AS ips
+FROM sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, @Mode) AS ips
 JOIN sys.indexes AS i ON i.object_id = ips.object_id AND i.index_id = ips.index_id
 WHERE ips.index_id > 0
+  AND i.is_disabled = 0
+  AND i.type_desc NOT LIKE '%COLUMNSTORE%'   -- columnstore health is about row groups, not fragmentation
   AND ips.page_count >= @MinPages
 ORDER BY ips.avg_fragmentation_in_percent DESC, ips.page_count DESC;
