@@ -8,4 +8,9 @@ SELECT d.name AS database_name,
 FROM sys.databases AS d
 WHERE d.state_desc = 'ONLINE'
   AND d.database_id <> 2
+  AND d.name NOT IN (SELECT DB_NAME(database_id)
+                     FROM sys.dm_hadr_database_replica_states
+                     WHERE is_local = 1 AND is_primary_replica = 0)   -- CHECKDB runs on the primary, or on the secondary by choice
 ORDER BY days_since DESC;
+
+-- Databases excluded above (secondary copies) are checked on their own replica.
