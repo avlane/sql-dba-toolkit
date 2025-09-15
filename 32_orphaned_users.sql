@@ -5,4 +5,8 @@ FROM sys.database_principals AS dp
 LEFT JOIN sys.server_principals AS sp ON sp.sid = dp.sid
 WHERE dp.type IN ('S', 'U', 'G')
   AND sp.sid IS NULL
+  AND dp.authentication_type_desc <> 'NONE'                 -- skip users without login
+  AND dp.authentication_type_desc <> 'DATABASE'             -- contained users have no server login by design
+  AND dp.name NOT IN (N'guest', N'INFORMATION_SCHEMA', N'sys', N'dbo')
+  AND dp.sid IS NOT NULL
 ORDER BY dp.name;
