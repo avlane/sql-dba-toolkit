@@ -1,4 +1,9 @@
 -- Latest full, differential and log backup per database, from msdb.
+-- @DatabasePattern is a regular expression such as '^(Sales|Orders)' and needs SQL Server 2025
+-- with the current database at compatibility level 170. Leave it NULL on older versions: the
+-- REGEXP_LIKE call in the WHERE clause is the only part that needs 2025, so remove that line there.
+DECLARE @DatabasePattern NVARCHAR(200) = NULL;
+
 SELECT d.name AS database_name,
        d.recovery_model_desc,
        MAX(CASE WHEN b.type = 'D' THEN b.backup_finish_date END) AS last_full,
@@ -7,6 +12,7 @@ SELECT d.name AS database_name,
 FROM sys.databases AS d
 LEFT JOIN msdb.dbo.backupset AS b ON b.database_name = d.name AND b.is_copy_only = 0 AND b.is_snapshot = 0
 WHERE d.database_id <> 2          -- tempdb is never backed up
+  AND (@DatabasePattern IS NULL OR REGEXP_LIKE(d.name, @DatabasePattern))
 GROUP BY d.name, d.recovery_model_desc
 ORDER BY d.name;
 
