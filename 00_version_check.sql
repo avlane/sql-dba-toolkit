@@ -9,5 +9,6 @@ FROM (VALUES
         (N'Query Store reports (14, 16, 24)',             CASE WHEN CAST(SERVERPROPERTY('ProductMajorVersion') AS INT) >= 13 THEN 1 ELSE 0 END),
         (N'Persistent version store (23)',                CASE WHEN CAST(SERVERPROPERTY('ProductMajorVersion') AS INT) >= 15 THEN 1 ELSE 0 END),
         (N'Query Store hints and DATETRUNC (10, 16)',     CASE WHEN CAST(SERVERPROPERTY('ProductMajorVersion') AS INT) >= 16 THEN 1 ELSE 0 END),
-        (N'REGEXP functions (SQL Server 2025)',           CASE WHEN CAST(SERVERPROPERTY('ProductMajorVersion') AS INT) >= 17 THEN 1 ELSE 0 END)
+        (N'REGEXP functions (SQL Server 2025)',           CASE WHEN CAST(SERVERPROPERTY('ProductMajorVersion') AS INT) >= 17 THEN 1 ELSE 0 END),
+        (N'Optimized locking status (43)',                CASE WHEN CAST(SERVERPROPERTY('ProductMajorVersion') AS INT) >= 17 THEN 1 ELSE 0 END)
      ) AS f(feature, available);
