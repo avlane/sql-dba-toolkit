@@ -34,6 +34,17 @@ WHERE a.wait_time_ms - b.wait_time_ms > 0
       N'REDO_THREAD_PENDING_WORK', N'UCS_SESSION_REGISTRATION', N'PREEMPTIVE_OS_FLUSHFILEBUFFERS')
 )
 SELECT wait_type,
+       CASE
+            WHEN wait_type LIKE N'PAGEIOLATCH%'   THEN 'Waiting for a data page to be read from disk'
+            WHEN wait_type LIKE N'PAGELATCH%'     THEN 'In-memory page contention (tempdb allocation pages, hot rows)'
+            WHEN wait_type = N'WRITELOG'          THEN 'Waiting for the transaction log flush'
+            WHEN wait_type = N'CXPACKET' OR wait_type = N'CXCONSUMER' THEN 'Parallelism; check MAXDOP and cost threshold'
+            WHEN wait_type = N'SOS_SCHEDULER_YIELD' THEN 'CPU pressure: tasks yielding to wait for a scheduler'
+            WHEN wait_type LIKE N'LCK_M%'         THEN 'Blocking: waiting for a lock'
+            WHEN wait_type = N'ASYNC_NETWORK_IO'  THEN 'Client is slow to consume results'
+            WHEN wait_type = N'RESOURCE_SEMAPHORE' THEN 'Queries waiting for a memory grant'
+            WHEN wait_type LIKE N'HADR_SYNC_COMMIT' THEN 'Synchronous AG commit waiting on a replica'
+       END AS explanation,
        waiting_tasks,
        wait_time_ms,
        wait_time_ms - signal_wait_ms AS resource_wait_ms,
