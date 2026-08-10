@@ -1,4 +1,6 @@
--- SQLCMD mode. Runs the reports against the connected instance and the current database.
+-- SQLCMD mode only (SSMS: Query > SQLCMD Mode, or sqlcmd -i). Runs the reports against the connected
+-- instance and the current database. Reports needing a newer SQL Server than yours fail on their own
+-- and the rest continue; the 2025-only scripts (43, and the REGEXP bits in 07 and 30) are left out here.
 -- Instance level
 :r 05_wait_stats_delta.sql
 :r 21_memory.sql
@@ -20,3 +22,6 @@
 :r 17_stats_freshness.sql
 :r 32_orphaned_users.sql
 :r 34_untrusted_constraints.sql
+:r 47_database_options.sql
+:r 48_isolation_settings.sql
+:r 46_suspect_pages.sql
