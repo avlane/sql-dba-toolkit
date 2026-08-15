@@ -34,6 +34,15 @@ Originally written for SQL Server 2016 to 2019; newer features are marked per sc
 | `28_blocking_json.sql` | blocking as JSON | 2016 |
 | `29_ag_health.sql` | availability group health | Always On |
 | `30` to `42` | error log logins, privileged members, orphaned users, duplicate indexes, untrusted constraints, forwarded heap records, single-use plans, file growth, instance settings, Agent alerts, Database Mail, linked servers, trace flags | any |
+| `43_optimized_locking.sql` | optimized locking status | 2025 |
+| `44_forced_plan_failures.sql` | Query Store forced plans that fail | 2016 |
+| `45_backup_chain.sql` | log backup LSN chain holes | any |
+| `46_suspect_pages.sql` | damaged pages recorded by the engine | any |
+| `47_database_options.sql` | auto_close, auto_shrink, page_verify, TRUSTWORTHY | any |
+| `48_isolation_settings.sql` | RCSI, snapshot, session isolation levels | any |
+| `49_config_export.sql` | `sys.configurations` as JSON | 2016 |
+| `50_compat_level_lag.sql` | databases below the model compatibility level | any |
+| `51_cpu_history.sql` | SQL versus other CPU, last hour | any |
 | `run_all.sql` | SQLCMD runner | any |
 
 ## Sample output
@@ -56,3 +65,8 @@ database_name  logical_name  type_desc  size_mb  growth_setting  finding
 Staging        Staging_log   LOG        512.0    10 %            percent growth
 ReportingDW    ReportingDW   ROWS       8192.0   1.0 MB          increment under 64 MB
 ```
+
+## SQL Server 2025 notes
+
+- `07_backup_history.sql` has an optional `REGEXP_LIKE` database filter and `30_error_log_failed_logins.sql` extracts client addresses with `REGEXP_SUBSTR`. Both need compatibility level 170. On older versions remove those parts.
+- `43_optimized_locking.sql` reads `DATABASEPROPERTYEX(..., 'IsOptimizedLockingOn')`, which returns NULL before SQL Server 2025.
