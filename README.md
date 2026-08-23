@@ -70,3 +70,16 @@ ReportingDW    ReportingDW   ROWS       8192.0   1.0 MB          increment under
 
 - `07_backup_history.sql` has an optional `REGEXP_LIKE` database filter and `30_error_log_failed_logins.sql` extracts client addresses with `REGEXP_SUBSTR`. Both need compatibility level 170. On older versions remove those parts.
 - `43_optimized_locking.sql` reads `DATABASEPROPERTYEX(..., 'IsOptimizedLockingOn')`, which returns NULL before SQL Server 2025.
+
+## More sample output
+
+`05_wait_stats_delta.sql` over a 30 second window on a busy reporting server:
+
+```
+wait_type          explanation                                       waiting_tasks  wait_time_ms  resource_wait_ms  signal_wait_ms  pct_of_total
+-----------------  ------------------------------------------------  -------------  ------------  ----------------  --------------  ------------
+PAGEIOLATCH_SH     Waiting for a data page to be read from disk      18422          61840         61790             50              38.20
+CXPACKET           Parallelism; check MAXDOP and cost threshold      9021           34115         33870             245             21.07
+SOS_SCHEDULER_YIELD CPU pressure: tasks yielding to wait for ...     52010          12480         210               12270           7.71
+WRITELOG           Waiting for the transaction log flush             3315           9832          9710              122             6.07
+```
