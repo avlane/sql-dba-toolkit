@@ -1,6 +1,6 @@
 -- SQLCMD mode only (SSMS: Query > SQLCMD Mode, or sqlcmd -i). Runs the reports against the connected
 -- instance and the current database. Reports needing a newer SQL Server than yours fail on their own
--- and the rest continue; the 2025-only scripts (43, and the REGEXP bits in 07 and 30) are left out here.
+-- and the rest continue; 43 and 30 are left out because they use 2025 features, and 07 has one REGEXP_LIKE line to delete on older versions.
 -- Instance level
 :r 05_wait_stats_delta.sql
 :r 21_memory.sql
